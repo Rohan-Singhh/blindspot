@@ -1,0 +1,1 @@
+{"name":"drift-root","private":true,"workspaces":["packages/*"],"packageManager":"npm@10","engines":{"node":">=22"}}

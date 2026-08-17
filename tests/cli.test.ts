@@ -27,4 +27,11 @@ describe("CLI integration", () => {
     const output = run(["scan", root, "--category", "docker"]);
     expect(output).toContain("No issues found by the enabled Blindspot rules.");
   });
+
+  it("lists the rule registry and filters it by category", () => {
+    const output = run(["rules", "--category", "docker"]);
+    expect(output).toContain("docker/root-user");
+    expect(output).toContain("docker/env-file-copied");
+    expect(output).not.toContain("git/tracked-env");
+  });
 });

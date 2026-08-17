@@ -12,7 +12,7 @@ npx blindspot-cli
 Local. Deterministic. No AI. No API key.
 
 ```text
-Blindspot v0.1.1
+Blindspot v0.2.0
 
 Detected:
 TypeScript · Docker · GitHub Actions
@@ -31,16 +31,15 @@ Files: backend/Dockerfile
 
 ## What is Blindspot?
 
-Blindspot scans relationships across Git, environment templates, Docker, Node
-runtime configuration, package managers, and GitHub Actions. It targets issues
-where each individual file may look valid but the repository configuration does
-not agree.
+**Blindspot is a repository-contract scanner.** It finds when code, Git, Docker,
+CI, environment configuration, package tooling, and build/release configuration
+disagree. This release ships **24 repository-contract checks**.
 
 ## Why not ESLint?
 
-ESLint understands source-code rules. Blindspot looks for repository-level
-inconsistencies between files and tooling. It complements ESLint; it does not
-replace it.
+ESLint asks whether source code follows code-level rules. Blindspot asks whether
+the repository will behave consistently across local development, CI,
+containers, packaging, and production. It complements ESLint.
 
 ```text
 package.json        Node >=22
@@ -50,6 +49,18 @@ GitHub Actions      Node 22
 
 Each setting can be valid on its own. Together, they can put local, CI, and
 production environments on different runtimes.
+
+```text
+package main        dist/index.js
+package types       dist/index.d.ts
+npm files           lib/
+```
+
+```text
+pnpm-lock.yaml      present
+CI                   npm install
+Docker               yarn install
+```
 
 ## Quick Start
 
@@ -65,19 +76,23 @@ npx blindspot-cli scan --json
 npx blindspot-cli scan --severity high
 npx blindspot-cli scan --category docker
 npx blindspot-cli scan --quiet
+npx blindspot-cli rules
+npx blindspot-cli rules --category docker
 ```
 
-## Current Rules
+## Rule Packs
 
-| Rule | Severity | What it catches |
-| --- | --- | --- |
-| `git/tracked-env` | Critical | Sensitive `.env` files tracked by Git; templates are excluded |
-| `docker/root-user` | High | Dockerfiles that do not select a non-root `USER` |
-| `env/example-missing-variable` | Medium | Variables missing from recognized env templates |
-| `runtime/node-version-mismatch` | High | Inconsistent Node versions across package, local, Docker, and CI configuration |
-| `runtime/package-manager-mismatch` | Medium | Docker or CI installs using a different manager than the lockfile |
-| `ci/tests-not-run` | High | Test scripts that GitHub Actions does not appear to run |
-| `ci/non-deterministic-install` | Medium | `npm install` in GitHub Actions when `package-lock.json` is present |
+| Pack | Checks | Focus |
+| --- | ---: | --- |
+| Runtime | 5 | Node, lockfile, and package-manager contracts |
+| Environment | 2 | Source usage and env-template consistency |
+| Docker | 3 | Runtime user, env build context, deterministic installs |
+| CI | 4 | Tests, scripts, caches, and deterministic installs |
+| Git | 4 | Tracked secrets, dependencies, env files, and ignored lockfiles |
+| Monorepo | 3 | Workspace package-manager, engine, and lockfile drift |
+| Release | 3 | npm runtime files, sensitive files, and publishability |
+
+See the complete [rule catalog](docs/RULES.md) for evidence and remediation.
 
 ## Local by Default
 
@@ -89,11 +104,10 @@ npx blindspot-cli scan --quiet
 
 ## Supported Scope
 
-Blindspot currently works best with Node.js, JavaScript, and TypeScript
-repositories and their common surrounding tooling: Docker, GitHub Actions, npm,
-pnpm, yarn, and environment template files. It can detect Prisma, Next.js, and
-Express in repository metadata, but this release has no dedicated rules for
-those frameworks.
+Blindspot analyzes Node.js, JavaScript, and TypeScript repository contracts
+across Git, Docker, GitHub Actions, npm, pnpm, yarn, env templates, workspaces,
+and npm release metadata. It detects Prisma, Next.js, and Express as stack
+signals, but does not provide framework-specific rules for them yet.
 
 ## CI
 
@@ -118,10 +132,9 @@ applicable to your repository:
 
 ## Limitations
 
-Blindspot is early-stage. It favors a small number of high-confidence checks
-over broad coverage. Node version comparison is conservative, GitHub Actions
-parsing is lightweight rather than full YAML semantic analysis, and monorepos
-do not receive deep package-by-package analysis yet.
+Blindspot is early-stage. Node version comparison is conservative, GitHub
+Actions parsing is lightweight rather than full YAML semantic analysis, and
+monorepo analysis is limited to explicit workspace-level contracts.
 
 ## What Blindspot Is Not
 
@@ -131,10 +144,13 @@ production-ready.
 
 ## Contributing
 
-Blindspot prefers a few high-confidence findings over hundreds of noisy
-warnings. If it cannot determine something confidently, it should often stay
-quiet. Rule contributions should provide clear evidence, low false-positive
-rates, and repository-level value.
+**Signal over noise.** Blindspot prefers a smaller number of high-confidence
+findings over hundreds of speculative warnings. When it cannot determine
+something confidently, it should stay quiet.
+
+A new rule should catch a real repository-level failure, provide concrete
+evidence, avoid duplicating traditional linters, and include positive and
+negative tests.
 
 Want to add a rule? See [CONTRIBUTING.md](CONTRIBUTING.md). For security issues
 in Blindspot itself, see [SECURITY.md](SECURITY.md).

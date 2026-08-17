@@ -35,7 +35,7 @@ function formatHuman(findings: readonly Finding[], stack: RepositoryStack, fileC
   const counts = Object.fromEntries(SEVERITIES.map((severity) => [severity, findings.filter((finding) => finding.severity === severity).length])) as Record<Severity, number>;
   const header = `Blindspot v${metadata.version}\n\nDetected:\n${stackLabel(stack) || "No supported stack detected"}\n\nScanned ${fileCount} files in ${durationMs}ms`;
   const summary = `Summary\n\nCritical  ${counts.critical}\nHigh      ${counts.high}\nMedium    ${counts.medium}\nLow       ${counts.low}`;
-  return findings.length ? `${header}\n\n${findings.length} findings\n\n${sections.join("\n\n────────────────────────────────────────\n\n")}\n\n${summary}` : `${header}\n\nNo issues found by the enabled Blindspot rules.\n\n${summary}`;
+  return findings.length ? `${header}\n\n${findings.length} ${findings.length === 1 ? "finding" : "findings"}\n\n${sections.join("\n\n────────────────────────────────────────\n\n")}\n\n${summary}` : `${header}\n\nNo issues found by the enabled Blindspot rules.\n\n${summary}`;
 }
 
 async function scan(scanPath: string | undefined, options: ScanOptions): Promise<void> {
@@ -63,4 +63,10 @@ const examples = "Examples:\n\n  blindspot\n  blindspot scan\n  blindspot scan .
 const program = new Command();
 program.name("blindspot").description(`Find the problems your linters don't.\n\n${examples}`).version(metadata.version);
 addScanOptions(program); addScanOptions(program.command("scan").description(`scan a repository\n\n${examples}`));
+program.command("rules").description("list available rules").option("--category <category>", "filter rules by category")
+  .action((options: { category?: string }, command: Command) => {
+    const category = options.category || command.parent?.opts<{ category?: string }>().category;
+    const rules = builtInRules.filter((rule) => !category || rule.category === category).sort((left, right) => left.id.localeCompare(right.id));
+    for (const rule of rules) process.stdout.write(`${rule.id.padEnd(43)} ${rule.defaultSeverity}\n`);
+  });
 program.parseAsync().catch((error: unknown) => { process.stderr.write(`Blindspot failed: ${error instanceof Error ? error.message : "Unknown error"}\n`); process.exitCode = 2; });

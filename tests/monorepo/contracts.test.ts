@@ -1,0 +1,16 @@
+import { describe, expect, it } from "vitest";
+import { createRepositoryContext } from "@blindspot/core";
+import { monorepoEngineDriftRule, monorepoMultipleLockfilesRule, monorepoPackageManagerDriftRule } from "@blindspot/rules";
+import { createFixture } from "../helpers.js";
+
+const check = async (rule: typeof monorepoEngineDriftRule, files: Record<string, string>) => rule.check(await createRepositoryContext(await createFixture(files)));
+const root = (extra = "") => `{"workspaces":["packages/*"]${extra}}`;
+
+describe("monorepo contract rules", () => {
+  it("detects package-manager drift across workspace manifests", async () => expect(await check(monorepoPackageManagerDriftRule, { "package.json": root(',"packageManager":"npm@10"'), "packages/api/package.json": '{"packageManager":"pnpm@9"}' })).toHaveLength(1));
+  it("accepts aligned workspace package managers", async () => expect(await check(monorepoPackageManagerDriftRule, { "package.json": root(',"packageManager":"pnpm@9"'), "packages/api/package.json": '{"packageManager":"pnpm@9"}' })).toEqual([]));
+  it("detects Node engine drift across workspace manifests", async () => expect(await check(monorepoEngineDriftRule, { "package.json": root(',"engines":{"node":">=22"}'), "packages/api/package.json": '{"engines":{"node":">=20"}}' })).toHaveLength(1));
+  it("accepts aligned workspace Node engines", async () => expect(await check(monorepoEngineDriftRule, { "package.json": root(',"engines":{"node":">=22"}'), "packages/api/package.json": '{"engines":{"node":"^22"}}' })).toEqual([]));
+  it("detects root and workspace-local lockfiles", async () => expect(await check(monorepoMultipleLockfilesRule, { "package.json": root(), "package-lock.json": "{}", "packages/api/package-lock.json": "{}" })).toHaveLength(1));
+  it("accepts a root-managed monorepo lockfile", async () => expect(await check(monorepoMultipleLockfilesRule, { "package.json": root(), "package-lock.json": "{}", "packages/api/package.json": "{}" })).toEqual([]));
+});

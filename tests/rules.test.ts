@@ -103,4 +103,22 @@ describe("repository-level rules", () => {
       "runtime/node-version-mismatch", "runtime/package-manager-mismatch", "ci/tests-not-run", "env/example-missing-variable", "docker/root-user",
     ]));
   });
+
+  it("keeps a realistic healthy Node API quiet", async () => {
+    const findings = await runRules(await contextFor("healthy-node-api"), builtInRules);
+    expect(findings).toEqual([]);
+  });
+
+  it("finds deterministic contract failures across realistic fixtures", async () => {
+    const cases: Array<[string, string[]]> = [
+      ["broken-ci-project", ["ci/cache-package-manager-mismatch", "ci/non-deterministic-install", "ci/script-command-missing", "ci/tests-not-run"]],
+      ["monorepo-with-drift", ["monorepo/engine-drift", "monorepo/multiple-lockfiles", "monorepo/package-manager-drift"]],
+      ["npm-package-with-release-errors", ["release/npm-files-excludes-runtime", "release/npm-files-includes-secret"]],
+      ["env-heavy-fullstack-project", ["env/duplicate-template-variable", "env/example-missing-variable"]],
+    ];
+    for (const [fixture, expected] of cases) {
+      const findings = await runRules(await contextFor(fixture), builtInRules);
+      expect(findings.map((finding) => finding.ruleId), fixture).toEqual(expect.arrayContaining(expected));
+    }
+  });
 });
