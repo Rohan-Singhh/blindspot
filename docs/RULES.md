@@ -1,6 +1,6 @@
 # Blindspot rule catalog
 
-Blindspot 0.2.1 ships 24 deterministic repository-contract checks. Severities
+Current source ships 25 deterministic repository-contract checks. Severities
 shown here are the defaults.
 
 ## Runtime
@@ -12,6 +12,7 @@ shown here are the defaults.
 | `runtime/missing-lockfile` | Medium | Explicit `packageManager` without its lockfile | Field value and expected lockfile | Generate and commit the lockfile |
 | `runtime/multiple-lockfiles` | Medium | Root lockfiles for competing managers | Lockfile names and managers | Remove stale lockfiles |
 | `runtime/package-manager-field-drift` | High | `packageManager` disagreeing with one root lockfile | Field and lockfile manager | Align the declaration and lockfile |
+| `runtime/build-output-mismatch` | High | TypeScript outDir disagreeing with package or Docker runtime targets | tsconfig, package entry points, Docker commands | Align build output and runtime paths |
 
 ## Environment
 

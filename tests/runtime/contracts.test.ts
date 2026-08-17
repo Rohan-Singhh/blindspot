@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createRepositoryContext } from "@blindspot/core";
-import { missingLockfileRule, multipleLockfilesRule, packageManagerFieldDriftRule } from "@blindspot/rules";
+import { buildOutputMismatchRule, missingLockfileRule, multipleLockfilesRule, packageManagerFieldDriftRule } from "@blindspot/rules";
 import { createFixture } from "../helpers.js";
 
 const check = async (rule: typeof missingLockfileRule, files: Record<string, string>) => rule.check(await createRepositoryContext(await createFixture(files)));
@@ -12,4 +12,7 @@ describe("runtime contract rules", () => {
   it("accepts one root lockfile", async () => expect(await check(multipleLockfilesRule, { "package-lock.json": "{}" })).toEqual([]));
   it("detects packageManager and lockfile drift", async () => expect(await check(packageManagerFieldDriftRule, { "package.json": '{"packageManager":"pnpm@9"}', "package-lock.json": "{}" })).toHaveLength(1));
   it("accepts an aligned packageManager field", async () => expect(await check(packageManagerFieldDriftRule, { "package.json": '{"packageManager":"npm@10"}', "package-lock.json": "{}" })).toEqual([]));
+  it("detects TypeScript output and runtime target drift", async () => expect(await check(buildOutputMismatchRule, { "package.json": '{"main":"dist/index.js","scripts":{"build":"tsc"}}', "tsconfig.json": '{"compilerOptions":{"outDir":"build"}}', "Dockerfile": 'CMD ["node", "dist/index.js"]' })).toHaveLength(1));
+  it("accepts aligned TypeScript and runtime targets", async () => expect(await check(buildOutputMismatchRule, { "package.json": '{"main":"build/index.js","scripts":{"build":"tsc"}}', "tsconfig.json": '{// comment\n"compilerOptions":{"outDir":"build",}}' })).toEqual([]));
+  it("stays quiet when a bundler owns the output", async () => expect(await check(buildOutputMismatchRule, { "package.json": '{"main":"dist/index.js","scripts":{"build":"vite build"}}', "tsconfig.json": '{"compilerOptions":{"outDir":"build"}}' })).toEqual([]));
 });
