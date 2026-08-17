@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createRepositoryContext } from "@blindspot/core";
-import { envFileCopiedRule, missingNodeEnvRule, npmInstallWithLockfileRule } from "@blindspot/rules";
+import { envFileCopiedRule, missingNodeEnvRule, npmStartEntrypointRule, npmInstallWithLockfileRule } from "@blindspot/rules";
 import { createFixture } from "../helpers.js";
 
 const check = async (rule: any, files: Record<string, string>, stack: any = {}) => rule.check({ ...await createRepositoryContext(await createFixture(files)), stack });
@@ -21,6 +21,21 @@ describe("Docker contract rules", () => {
     });
     it("ignores missing NODE_ENV if not a node project", async () => {
       expect(await check(missingNodeEnvRule, { Dockerfile: "FROM nginx:latest" }, { node: false, javascript: false, typescript: false })).toEqual([]);
+    });
+  });
+
+  describe("npmStartEntrypointRule", () => {
+    it("detects CMD [\"npm\", \"start\"]", async () => {
+      expect(await check(npmStartEntrypointRule, { Dockerfile: "FROM node:22\nCMD [\"npm\", \"start\"]" })).toHaveLength(1);
+    });
+    it("detects CMD npm start", async () => {
+      expect(await check(npmStartEntrypointRule, { Dockerfile: "FROM node:22\nCMD npm start" })).toHaveLength(1);
+    });
+    it("detects ENTRYPOINT [\"npm\", \"start\"]", async () => {
+      expect(await check(npmStartEntrypointRule, { Dockerfile: "FROM node:22\nENTRYPOINT [\"npm\", \"start\"]" })).toHaveLength(1);
+    });
+    it("accepts CMD [\"node\", \"server.js\"]", async () => {
+      expect(await check(npmStartEntrypointRule, { Dockerfile: "FROM node:22\nCMD [\"node\", \"server.js\"]" })).toEqual([]);
     });
   });
 });

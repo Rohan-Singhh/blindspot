@@ -26,6 +26,7 @@ shown here are the defaults.
 | --- | --- | --- | --- | --- |
 | `docker/root-user` | High | Dockerfiles without a clear non-root `USER` | Affected Dockerfiles | Select a non-root runtime user |
 | `docker/missing-node-env` | High | Dockerfiles without `ENV NODE_ENV=production` | Affected Dockerfiles | Set ENV NODE_ENV=production in your Dockerfile |
+| `docker/npm-start-entrypoint` | Medium | Dockerfiles using `npm start` as an entrypoint | Affected Dockerfiles | Invoke node directly using the exec form |
 | `docker/env-file-copied` | High | Root `COPY .` exposing local env files | Dockerfile, env files, `.dockerignore` gap | Ignore env files or copy explicit paths |
 | `docker/npm-install-with-lockfile` | Medium | `npm install` despite an npm lockfile | Docker command and lockfile | Use `npm ci` |
 
