@@ -12,13 +12,13 @@ configuration, infrastructure, CI, and relationships between files.
 Requires Node.js 20 or later.
 
 ```bash
-npx @blindspot/cli
+npx blindspot-cli
 ```
 
 Or install it globally:
 
 ```bash
-npm install --global @blindspot/cli
+npm install --global blindspot-cli
 blindspot
 ```
 
@@ -71,7 +71,8 @@ locally and read-only.
 - `docker/root-user` (high): checks `Dockerfile`, `Dockerfile.*`, and nested
   variants for a non-root `USER` instruction.
 - `env/example-missing-variable` (medium): compares `process.env.NAME` and
-  `process.env["NAME"]` usage with `.env.example`.
+  `process.env["NAME"]` usage with all recognized `.env*.example`,
+  `.env*.sample`, and `.env*.template` files.
 - `runtime/node-version-mismatch` (high): compares Node versions in package,
   local, Docker, and GitHub Actions configuration.
 - `runtime/package-manager-mismatch` (medium): catches dependency installs that
@@ -96,12 +97,12 @@ npm test
 
 ## CI usage
 
-Run `npx @blindspot/cli scan --json` in a CI step. Blindspot exits with `1`
+Run `npx blindspot-cli scan --json` in a CI step. Blindspot exits with `1`
 when it finds high or critical findings.
 
 ```yaml
 - name: Run Blindspot
-  run: npx @blindspot/cli scan --severity high
+  run: npx blindspot-cli scan --severity high
 ```
 
 ## Configuration

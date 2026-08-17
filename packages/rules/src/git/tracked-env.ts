@@ -6,7 +6,8 @@ const execFileAsync = promisify(execFile);
 
 function isSensitiveEnvFile(file: string): boolean {
   const basename = file.split("/").at(-1);
-  return basename !== ".env.example" && /^\.env(?:\..+)?$/.test(basename ?? "");
+  if (!basename || !/^\.env(?:\..+)?$/.test(basename)) return false;
+  return !/^\.env(?:\..+)?\.(?:example|sample|template)$/.test(basename);
 }
 
 export const trackedEnvRule: Rule = {

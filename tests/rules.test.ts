@@ -1,4 +1,7 @@
 import { execFile } from "node:child_process";
+import { mkdir, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
 import { createRepositoryContext, runRules } from "@blindspot/core";
@@ -23,6 +26,23 @@ describe("git/tracked-env", () => {
     await execFileAsync("git", ["init"], { cwd: root });
     expect(await trackedEnvRule.check(await createRepositoryContext(root))).toEqual([]);
   });
+
+  it("does not report a tracked environment template variant", async () => {
+    const root = await copyFixture("tracked-env-repository");
+    await writeFile(path.join(root, ".env.dev.example"), "API_URL=\n");
+    await execFileAsync("git", ["init"], { cwd: root });
+    await execFileAsync("git", ["add", ".env.dev.example"], { cwd: root });
+    expect(await trackedEnvRule.check(await createRepositoryContext(root))).toEqual([]);
+  });
+
+  it("still reports a tracked sensitive environment variant", async () => {
+    const root = await copyFixture("tracked-env-repository");
+    await writeFile(path.join(root, ".env.dev"), "API_URL=secret\n");
+    await execFileAsync("git", ["init"], { cwd: root });
+    await execFileAsync("git", ["add", ".env.dev"], { cwd: root });
+    const findings = await trackedEnvRule.check(await createRepositoryContext(root));
+    expect(findings[0].files).toEqual([".env.dev"]);
+  });
 });
 
 describe("docker/root-user", () => {
@@ -38,12 +58,10 @@ describe("docker/root-user", () => {
 });
 
 describe("env/example-missing-variable", () => {
-  it("reports each undocumented variable from dot and bracket syntax", async () => {
+  it("aggregates undocumented variables from dot and bracket syntax", async () => {
     const findings = await missingExampleVariableRule.check(await contextFor("missing-env-example-variable"));
-    expect(findings.map((finding) => finding.message)).toEqual([
-      "JWT_SECRET is used by the application but is not documented in .env.example.",
-      "REDIS_URL is used by the application but is not documented in .env.example.",
-    ]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].evidence).toEqual(["JWT_SECRET", "REDIS_URL"]);
   });
 
   it("does not report variables documented in .env.example", async () => {
@@ -56,6 +74,23 @@ describe("env/example-missing-variable", () => {
     const findings = await missingExampleVariableRule.check(await createRepositoryContext(root));
     expect(findings).toHaveLength(1);
     expect(findings[0].message).toContain("Detected variables: DATABASE_URL, JWT_SECRET, REDIS_URL");
+  });
+
+  it("recognizes a variant environment template", async () => {
+    const root = await copyFixture("complete-env-example");
+    await (await import("node:fs/promises")).rm(`${root}/.env.example`);
+    await writeFile(path.join(root, ".env.dev.example"), "REDIS_URL=\nDATABASE_URL=\nJWT_SECRET=\n");
+    expect(await missingExampleVariableRule.check(await createRepositoryContext(root))).toEqual([]);
+  });
+
+  it("aggregates variables documented across nested templates", async () => {
+    const root = await (await import("node:fs/promises")).mkdtemp(path.join(tmpdir(), "blindspot-env-"));
+    await mkdir(path.join(root, "frontend"), { recursive: true });
+    await mkdir(path.join(root, "backend"), { recursive: true });
+    await writeFile(path.join(root, "index.ts"), "process.env.DATABASE_URL; process.env.JWT_SECRET; process.env.NEXT_PUBLIC_API_URL;");
+    await writeFile(path.join(root, "backend", ".env.example"), "DATABASE_URL=\nJWT_SECRET=\n");
+    await writeFile(path.join(root, "frontend", ".env.sample"), "NEXT_PUBLIC_API_URL=\n");
+    expect(await missingExampleVariableRule.check(await createRepositoryContext(root))).toEqual([]);
   });
 });
 

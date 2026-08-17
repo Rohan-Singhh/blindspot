@@ -5,6 +5,7 @@ import type { Finding, Rule } from "@blindspot/core";
 const SOURCE_FILE = /\.(?:[cm]?[jt]sx?)$/;
 const DOT_ENV = /\bprocess\.env\.([A-Z][A-Z0-9_]*)\b/g;
 const BRACKET_ENV = /\bprocess\.env\[\s*["']([A-Z][A-Z0-9_]*)["']\s*\]/g;
+const ENV_TEMPLATE = /(^|\/)\.env(?:\..+)?\.(?:example|sample|template)$/;
 
 function variablesInSource(source: string): string[] {
   return [...source.matchAll(DOT_ENV), ...source.matchAll(BRACKET_ENV)].map((match) => match[1]);
@@ -21,10 +22,10 @@ function documentedVariables(example: string): Set<string> {
 
 export const missingExampleVariableRule: Rule = {
   id: "env/example-missing-variable",
-  title: "Missing environment example variable",
+  title: "Missing environment template variables",
   category: "env",
   defaultSeverity: "medium",
-  description: "Detects environment variables absent from .env.example.",
+  description: "Detects environment variables absent from recognized .env templates.",
   async check(context): Promise<Finding[]> {
     const sourceFiles = context.files.filter((file) => SOURCE_FILE.test(file));
     const used = new Set<string>();
@@ -34,23 +35,28 @@ export const missingExampleVariableRule: Rule = {
       variablesInSource(source).forEach((variable) => used.add(variable));
     }
     if (used.size === 0) return [];
-    const exampleFile = context.files.find((file) => file === ".env.example");
+    const templateFiles = context.files.filter((file) => ENV_TEMPLATE.test(file));
     const usedVariables = [...used].sort();
-    if (!exampleFile) {
+    if (templateFiles.length === 0) {
       return [{
         ruleId: "env/example-missing-variable", severity: "medium",
-        message: `.env.example is missing. Detected variables: ${usedVariables.join(", ")}.`,
-        recommendation: "Create .env.example and document the environment variables required by the application.",
+        message: `No environment template is present. Detected variables: ${usedVariables.join(", ")}.`,
+        evidence: usedVariables,
+        recommendation: "Create an .env.example, .env.sample, or .env.template file and document the required variables.",
       }];
     }
-    let contents: string;
-    try { contents = await readFile(path.join(context.rootDir, exampleFile), "utf8"); } catch { return []; }
-    const documented = documentedVariables(contents);
-    return usedVariables.filter((variable) => !documented.has(variable)).map((variable) => ({
+    const documented = new Set<string>();
+    for (const templateFile of templateFiles) {
+      try { documentedVariables(await readFile(path.join(context.rootDir, templateFile), "utf8")).forEach((variable) => documented.add(variable)); } catch { continue; }
+    }
+    const missing = usedVariables.filter((variable) => !documented.has(variable));
+    if (!missing.length) return [];
+    return [{
       ruleId: "env/example-missing-variable", severity: "medium",
-      message: `${variable} is used by the application but is not documented in .env.example.`,
-      files: [exampleFile],
-      recommendation: `Add ${variable}= to .env.example.`,
-    }));
+      message: `${missing.length} environment ${missing.length === 1 ? "variable is" : "variables are"} used but not documented in any recognized env template. Missing: ${missing.join(", ")}.`,
+      files: templateFiles,
+      evidence: missing,
+      recommendation: "Document the missing variables in an .env.example, .env.sample, or .env.template file.",
+    }];
   },
 };
