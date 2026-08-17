@@ -1,6 +1,6 @@
 # Blindspot rule catalog
 
-Current source ships 35 deterministic repository-contract checks. Severities
+Current source ships 36 deterministic repository-contract checks. Severities
 shown here are the defaults.
 
 ## Runtime
@@ -72,6 +72,7 @@ shown here are the defaults.
 | `release/npm-files-excludes-runtime` | High | npm `files` excluding main, types, exports, or bin targets | Runtime targets and allowlist | Include every runtime target |
 | `release/npm-files-includes-secret` | Critical | npm `files` explicitly including sensitive env files | Included env paths | Remove secrets and rotate published values |
 | `release/publish-private-package` | High | GitHub Actions publishing a private package | `private` flag and publish workflow | Remove publish or change the package contract |
+| `release/publish-workspace-mismatch` | High | Publish steps targeting a missing or private workspace manifest | Workflow target and workspace package.json | Publish from the intended public package |
 
 Rules are intentionally conservative. Ambiguous workspace commands, explicit
 CI cache dependency paths, template env files, and unrecognized file formats
