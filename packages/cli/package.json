@@ -1,0 +1,12 @@
+{
+  "name": "@blindspot/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": { "blindspot": "./dist/index.js" },
+  "dependencies": {
+    "@blindspot/core": "file:../core",
+    "@blindspot/rules": "file:../rules",
+    "commander": "^13.1.0"
+  }
+}

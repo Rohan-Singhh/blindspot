@@ -1,0 +1,5 @@
+FROM node:22
+WORKDIR /app
+RUN useradd --create-home appuser
+USER appuser
+CMD ["node", "server.js"]

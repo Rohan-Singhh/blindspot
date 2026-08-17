@@ -1,0 +1,9 @@
+{
+  "name": "@blindspot/rules",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": "./dist/index.js",
+  "dependencies": { "@blindspot/core": "file:../core" }
+}
