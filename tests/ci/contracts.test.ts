@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createRepositoryContext } from "@blindspot/core";
-import { cachePackageManagerMismatchRule, scriptCommandMissingRule } from "@blindspot/rules";
+import { cachePackageManagerMismatchRule, scriptCommandMissingRule, workingDirectoryMissingRule } from "@blindspot/rules";
 import { createFixture } from "../helpers.js";
 
 const workflow = (command: string) => `jobs:\n  test:\n    steps:\n      - uses: actions/setup-node@v4\n        with:\n          cache: ${command}`;
@@ -13,4 +13,7 @@ describe("CI contract rules", () => {
   it("detects setup-node cache and lockfile drift", async () => expect(await check(cachePackageManagerMismatchRule, { "package-lock.json": "{}", ".github/workflows/ci.yml": workflow("yarn") })).toHaveLength(1));
   it("accepts an aligned setup-node cache", async () => expect(await check(cachePackageManagerMismatchRule, { "package-lock.json": "{}", ".github/workflows/ci.yml": workflow("npm") })).toEqual([]));
   it("stays quiet when cache-dependency-path selects another lockfile", async () => expect(await check(cachePackageManagerMismatchRule, { "package-lock.json": "{}", ".github/workflows/ci.yml": `${workflow("yarn")}\n          cache-dependency-path: frontend/yarn.lock` })).toEqual([]));
+  it("detects a missing literal working directory", async () => expect(await check(workingDirectoryMissingRule, { ".github/workflows/ci.yml": "defaults:\n  run:\n    working-directory: missing-app" })).toHaveLength(1));
+  it("accepts an existing working directory", async () => expect(await check(workingDirectoryMissingRule, { ".github/workflows/ci.yml": "steps:\n - run: npm test\n   working-directory: frontend", "frontend/package.json": "{}" })).toEqual([]));
+  it("stays quiet for expression-based working directories", async () => expect(await check(workingDirectoryMissingRule, { ".github/workflows/ci.yml": "working-directory: ${{ matrix.project }}" })).toEqual([]));
 });
