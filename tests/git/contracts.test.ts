@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
 import { createRepositoryContext } from "@blindspot/core";
-import { dependencyDirectoryCommittedRule, ignoredLockfileRule, trackedPrivateKeyRule } from "@blindspot/rules";
+import { dependencyDirectoryCommittedRule, ignoredLockfileRule, trackedPrivateKeyRule, trackedServiceAccountRule } from "@blindspot/rules";
 import { createFixture } from "../helpers.js";
 
 const execFileAsync = promisify(execFile);
@@ -15,4 +15,7 @@ describe("Git contract rules", () => {
   it("accepts an untracked node_modules directory", async () => { const root = await gitFixture({ "node_modules/demo/index.js": "export {};" }); expect(await dependencyDirectoryCommittedRule.check(await createRepositoryContext(root))).toEqual([]); });
   it("detects a lockfile ignored by Git", async () => { const root = await gitFixture({ ".gitignore": "package-lock.json\n", "package-lock.json": "{}" }); expect(await ignoredLockfileRule.check(await createRepositoryContext(root))).toHaveLength(1); });
   it("accepts a lockfile not ignored by Git", async () => { const root = await gitFixture({ ".gitignore": "dist/\n", "package-lock.json": "{}" }); expect(await ignoredLockfileRule.check(await createRepositoryContext(root))).toEqual([]); });
+  it("detects tracked service-account credentials", async () => { const credential = JSON.stringify({ type: "service_account", client_email: "bot@example.iam.gserviceaccount.com", private_key: "-----BEGIN PRIVATE KEY-----\nnot-a-real-key" }); const root = await gitFixture({ "service-account.json": credential }, ["service-account.json"]); expect(await trackedServiceAccountRule.check(await createRepositoryContext(root))).toHaveLength(1); });
+  it("accepts untracked service-account credentials", async () => { const credential = JSON.stringify({ type: "service_account", client_email: "bot@example.iam.gserviceaccount.com", private_key: "-----BEGIN PRIVATE KEY-----\nnot-a-real-key" }); const root = await gitFixture({ "service-account.json": credential }); expect(await trackedServiceAccountRule.check(await createRepositoryContext(root))).toEqual([]); });
+  it("does not mistake public client configuration for credentials", async () => { const root = await gitFixture({ "firebase.json": JSON.stringify({ project_info: {}, client: [{ api_key: [] }] }) }, ["firebase.json"]); expect(await trackedServiceAccountRule.check(await createRepositoryContext(root))).toEqual([]); });
 });

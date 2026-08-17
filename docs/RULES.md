@@ -1,6 +1,6 @@
 # Blindspot rule catalog
 
-Current source ships 33 deterministic repository-contract checks. Severities
+Current source ships 34 deterministic repository-contract checks. Severities
 shown here are the defaults.
 
 ## Runtime
@@ -51,6 +51,7 @@ shown here are the defaults.
 | `git/tracked-private-key` | Critical | Tracked key files with a private-key header | Filename and header match | Revoke, rotate, and remove from history |
 | `git/dependency-directory-committed` | Medium | Files tracked under `node_modules` | Tracked file count and examples | Untrack and ignore dependencies |
 | `git/ignored-lockfile` | Medium | Existing root lockfiles matched by Git ignores | Lockfile and ignore result | Commit the intended lockfile |
+| `git/tracked-service-account` | Critical | Tracked Google-style service-account private credentials | Credential filename and structural fields | Rotate the key and remove it from history |
 
 ## Monorepo
 
