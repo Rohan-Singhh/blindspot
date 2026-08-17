@@ -3,7 +3,6 @@
 > **Find the problems your linters don't.**
 
 [![npm version](https://img.shields.io/npm/v/blindspot-cli.svg)](https://www.npmjs.com/package/blindspot-cli)
-[![npm downloads](https://img.shields.io/npm/dm/blindspot-cli.svg)](https://www.npmjs.com/package/blindspot-cli)
 [![MIT license](https://img.shields.io/github/license/Rohan-Singhh/blindspot.svg)](LICENSE)
 
 ```bash
@@ -28,9 +27,6 @@ docker/root-user
 Docker container appears to run as root.
 
 Files: backend/Dockerfile
-
-Suggested fix:
-Run the application using a non-root USER.
 ```
 
 ## What is Blindspot?
