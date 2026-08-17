@@ -12,7 +12,7 @@ npx blindspot-cli
 Local. Deterministic. No AI. No API key.
 
 ```text
-Blindspot v0.2.1
+Blindspot v0.3.0
 
 Detected:
 TypeScript · Docker · GitHub Actions
