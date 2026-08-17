@@ -1,6 +1,6 @@
 # Blindspot rule catalog
 
-Current source ships 28 deterministic repository-contract checks. Severities
+Current source ships 29 deterministic repository-contract checks. Severities
 shown here are the defaults.
 
 ## Runtime
@@ -40,6 +40,7 @@ shown here are the defaults.
 | `ci/script-command-missing` | High | CI invoking undefined root package scripts | Workflow command and scripts map | Define or correct the script |
 | `ci/cache-package-manager-mismatch` | Medium | setup-node cache disagreeing with the root lockfile | Cache value and lockfile manager | Align cache configuration |
 | `ci/working-directory-missing` | High | Literal workflow working-directory paths that do not exist | Workflow file and missing path | Correct or add the directory |
+| `ci/cache-lockfile-path-missing` | High | Literal cache paths that are missing or belong to another manager | setup-node cache and lockfile path | Point cache at the correct lockfile |
 
 ## Git
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createRepositoryContext } from "@blindspot/core";
-import { cachePackageManagerMismatchRule, scriptCommandMissingRule, workingDirectoryMissingRule } from "@blindspot/rules";
+import { cacheLockfilePathMissingRule, cachePackageManagerMismatchRule, scriptCommandMissingRule, workingDirectoryMissingRule } from "@blindspot/rules";
 import { createFixture } from "../helpers.js";
 
 const workflow = (command: string) => `jobs:\n  test:\n    steps:\n      - uses: actions/setup-node@v4\n        with:\n          cache: ${command}`;
@@ -16,4 +16,8 @@ describe("CI contract rules", () => {
   it("detects a missing literal working directory", async () => expect(await check(workingDirectoryMissingRule, { ".github/workflows/ci.yml": "defaults:\n  run:\n    working-directory: missing-app" })).toHaveLength(1));
   it("accepts an existing working directory", async () => expect(await check(workingDirectoryMissingRule, { ".github/workflows/ci.yml": "steps:\n - run: npm test\n   working-directory: frontend", "frontend/package.json": "{}" })).toEqual([]));
   it("stays quiet for expression-based working directories", async () => expect(await check(workingDirectoryMissingRule, { ".github/workflows/ci.yml": "working-directory: ${{ matrix.project }}" })).toEqual([]));
+  it("detects a missing literal cache lockfile path", async () => expect(await check(cacheLockfilePathMissingRule, { ".github/workflows/ci.yml": `${workflow("npm")}\n          cache-dependency-path: frontend/package-lock.json` })).toHaveLength(1));
+  it("accepts an existing matching cache lockfile path", async () => expect(await check(cacheLockfilePathMissingRule, { ".github/workflows/ci.yml": `${workflow("npm")}\n          cache-dependency-path: frontend/package-lock.json`, "frontend/package-lock.json": "{}" })).toEqual([]));
+  it("detects a cache manager and lockfile-path mismatch", async () => expect(await check(cacheLockfilePathMissingRule, { ".github/workflows/ci.yml": `${workflow("npm")}\n          cache-dependency-path: frontend/yarn.lock`, "frontend/yarn.lock": "" })).toHaveLength(1));
+  it("stays quiet for dynamic cache paths", async () => expect(await check(cacheLockfilePathMissingRule, { ".github/workflows/ci.yml": `${workflow("npm")}\n          cache-dependency-path: \${{ matrix.lockfile }}` })).toEqual([]));
 });
