@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createRepositoryContext } from "@blindspot/core";
-import { cachePackageManagerMismatchRule, scriptCommandMissingRule } from "@blindspot/rules";
+import { cachePackageManagerMismatchRule, missingDependencyCacheRule, scriptCommandMissingRule } from "@blindspot/rules";
 import { createFixture } from "../helpers.js";
 
 const workflow = (command: string) => `jobs:\n  test:\n    steps:\n      - uses: actions/setup-node@v4\n        with:\n          cache: ${command}`;
-const check = async (rule: typeof scriptCommandMissingRule, files: Record<string, string>) => rule.check(await createRepositoryContext(await createFixture(files)));
+const check = async (rule: any, files: Record<string, string>) => rule.check(await createRepositoryContext(await createFixture(files)));
 
 describe("CI contract rules", () => {
   it("detects an undefined script invoked by CI", async () => expect(await check(scriptCommandMissingRule, { "package.json": '{"scripts":{"test":"vitest"}}', ".github/workflows/ci.yml": "steps:\n - run: npm run compile" })).toHaveLength(1));
@@ -13,4 +13,10 @@ describe("CI contract rules", () => {
   it("detects setup-node cache and lockfile drift", async () => expect(await check(cachePackageManagerMismatchRule, { "package-lock.json": "{}", ".github/workflows/ci.yml": workflow("yarn") })).toHaveLength(1));
   it("accepts an aligned setup-node cache", async () => expect(await check(cachePackageManagerMismatchRule, { "package-lock.json": "{}", ".github/workflows/ci.yml": workflow("npm") })).toEqual([]));
   it("stays quiet when cache-dependency-path selects another lockfile", async () => expect(await check(cachePackageManagerMismatchRule, { "package-lock.json": "{}", ".github/workflows/ci.yml": `${workflow("yarn")}\n          cache-dependency-path: frontend/yarn.lock` })).toEqual([]));
+  
+  describe("missingDependencyCacheRule", () => {
+    it("detects setup-node without cache", async () => expect(await check(missingDependencyCacheRule, { ".github/workflows/ci.yml": "uses: actions/setup-node@v4\nwith:\n  node-version: 20" })).toHaveLength(1));
+    it("accepts setup-node with cache", async () => expect(await check(missingDependencyCacheRule, { ".github/workflows/ci.yml": "uses: actions/setup-node@v4\nwith:\n  node-version: 20\n  cache: 'npm'" })).toEqual([]));
+    it("ignores workflows without setup-node", async () => expect(await check(missingDependencyCacheRule, { ".github/workflows/ci.yml": "run: echo Hello" })).toEqual([]));
+  });
 });

@@ -38,6 +38,7 @@ shown here are the defaults.
 | `ci/non-deterministic-install` | Medium | `npm install` in CI with `package-lock.json` | Workflow command and lockfile | Use `npm ci` |
 | `ci/script-command-missing` | High | CI invoking undefined root package scripts | Workflow command and scripts map | Define or correct the script |
 | `ci/cache-package-manager-mismatch` | Medium | setup-node cache disagreeing with the root lockfile | Cache value and lockfile manager | Align cache configuration |
+| `ci/missing-dependency-cache` | Medium | setup-node cache disabled in GitHub Actions | Missing cache option in setup-node | Add cache: 'npm' |
 
 ## Git
 
