@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createRepositoryContext } from "@blindspot/core";
-import { duplicatePackageNameRule, monorepoEngineDriftRule, monorepoMultipleLockfilesRule, monorepoPackageManagerDriftRule, workspaceScriptMissingRule } from "@blindspot/rules";
+import { duplicatePackageNameRule, internalDependencyVersionDriftRule, monorepoEngineDriftRule, monorepoMultipleLockfilesRule, monorepoPackageManagerDriftRule, workspaceScriptMissingRule } from "@blindspot/rules";
 import { createFixture } from "../helpers.js";
 
 const check = async (rule: typeof monorepoEngineDriftRule, files: Record<string, string>) => rule.check(await createRepositoryContext(await createFixture(files)));
@@ -19,4 +19,7 @@ describe("monorepo contract rules", () => {
   it("detects a workspace missing a recursively required script", async () => expect(await check(workspaceScriptMissingRule, { "package.json": root(',"scripts":{"build":"npm run build --workspaces"}'), "packages/api/package.json": '{"scripts":{"build":"tsc"}}', "packages/web/package.json": "{}" })).toHaveLength(1));
   it("accepts recursive scripts defined by every workspace", async () => expect(await check(workspaceScriptMissingRule, { "package.json": root(',"scripts":{"test":"pnpm -r run test"}'), "packages/api/package.json": '{"scripts":{"test":"vitest"}}', "packages/web/package.json": '{"scripts":{"test":"vitest"}}' })).toEqual([]));
   it("accepts intentionally optional recursive scripts", async () => expect(await check(workspaceScriptMissingRule, { "package.json": root(',"scripts":{"lint":"npm run lint --workspaces --if-present"}'), "packages/api/package.json": "{}" })).toEqual([]));
+  it("detects internal dependency ranges that exclude a workspace version", async () => expect(await check(internalDependencyVersionDriftRule, { "package.json": root(), "packages/api/package.json": '{"name":"@app/api","version":"2.0.0"}', "packages/web/package.json": '{"name":"@app/web","version":"1.0.0","dependencies":{"@app/api":"^1.4.0"}}' })).toHaveLength(1));
+  it("accepts compatible internal dependency ranges", async () => expect(await check(internalDependencyVersionDriftRule, { "package.json": root(), "packages/api/package.json": '{"name":"@app/api","version":"1.5.0"}', "packages/web/package.json": '{"name":"@app/web","version":"1.0.0","dependencies":{"@app/api":"^1.4.0"}}' })).toEqual([]));
+  it("leaves workspace protocols to the package manager", async () => expect(await check(internalDependencyVersionDriftRule, { "package.json": root(), "packages/api/package.json": '{"name":"@app/api","version":"2.0.0"}', "packages/web/package.json": '{"name":"@app/web","version":"1.0.0","dependencies":{"@app/api":"workspace:^1.0.0"}}' })).toEqual([]));
 });

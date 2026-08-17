@@ -1,6 +1,6 @@
 # Blindspot rule catalog
 
-Current source ships 32 deterministic repository-contract checks. Severities
+Current source ships 33 deterministic repository-contract checks. Severities
 shown here are the defaults.
 
 ## Runtime
@@ -61,6 +61,7 @@ shown here are the defaults.
 | `monorepo/multiple-lockfiles` | Medium | Root and workspace-local lockfiles | All affected lockfiles | Remove stale nested lockfiles or confirm intent |
 | `monorepo/duplicate-package-name` | High | A package name reused by declared workspaces | Duplicate name and manifests | Give every workspace a unique package name |
 | `monorepo/workspace-script-missing` | High | Recursive root scripts absent from selected workspaces | Root command and missing workspace scripts | Add scripts, narrow selection, or use `--if-present` |
+| `monorepo/internal-dependency-version-drift` | High | Internal exact/caret/tilde ranges excluding current workspace versions | Declaring and target manifests | Align the range or use a workspace protocol |
 
 ## Release
 
