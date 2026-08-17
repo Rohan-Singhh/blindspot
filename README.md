@@ -2,119 +2,153 @@
 
 > **Find the problems your linters don't.**
 
-Blindspot is a local, open-source CLI that checks a repository for risks that
-file-focused linters commonly miss. ESLint primarily analyzes source-code rules.
-Blindspot is designed for repository-wide checks involving Git, environment
-configuration, infrastructure, CI, and relationships between files.
-
-## Quick Start
-
-Requires Node.js 20 or later.
+[![npm version](https://img.shields.io/npm/v/blindspot-cli.svg)](https://www.npmjs.com/package/blindspot-cli)
+[![npm downloads](https://img.shields.io/npm/dm/blindspot-cli.svg)](https://www.npmjs.com/package/blindspot-cli)
+[![MIT license](https://img.shields.io/github/license/Rohan-Singhh/blindspot.svg)](LICENSE)
 
 ```bash
 npx blindspot-cli
 ```
 
-Or install it globally:
-
-```bash
-npm install --global blindspot-cli
-blindspot
-```
-
-## Usage
-
-```bash
-blindspot
-blindspot scan
-blindspot scan ./some-project
-blindspot scan --json
-```
-
-`--json` writes only machine-readable findings to standard output. Exit code `1`
-means at least one high or critical finding was found; `2` means Blindspot failed.
-
-Filter enabled rules with `--severity high` (critical and high findings) or
-`--category docker`. JSON includes both the detected repository stack and findings.
-
-Example:
+Local. Deterministic. No AI. No API key.
 
 ```text
-Blindspot
+Blindspot v0.1.1
 
-2 issues found
+Detected:
+TypeScript · Docker · GitHub Actions
 
-CRITICAL
-git/tracked-env
+Scanned 132 files in 80ms
 
-.env is tracked by Git.
-
-────────────────────────────
+1 finding
 
 HIGH
 docker/root-user
 
 Docker container appears to run as root.
+
+Files: backend/Dockerfile
+
+Suggested fix:
+Run the application using a non-root USER.
 ```
 
-## Why Blindspot?
+## What is Blindspot?
 
-ESLint understands source-code rules. Blindspot looks across repository
-configuration, infrastructure, CI, Git, and environment setup to find problems
-that exist between files. It is early-stage and intentionally runs entirely
-locally and read-only.
+Blindspot scans relationships across Git, environment templates, Docker, Node
+runtime configuration, package managers, and GitHub Actions. It targets issues
+where each individual file may look valid but the repository configuration does
+not agree.
+
+## Why not ESLint?
+
+ESLint understands source-code rules. Blindspot looks for repository-level
+inconsistencies between files and tooling. It complements ESLint; it does not
+replace it.
+
+```text
+package.json        Node >=22
+Dockerfile          Node 20
+GitHub Actions      Node 22
+```
+
+Each setting can be valid on its own. Together, they can put local, CI, and
+production environments on different runtimes.
+
+## Quick Start
+
+```bash
+npx blindspot-cli
+npx blindspot-cli scan ./my-project
+```
+
+Useful options:
+
+```bash
+npx blindspot-cli scan --json
+npx blindspot-cli scan --severity high
+npx blindspot-cli scan --category docker
+npx blindspot-cli scan --quiet
+```
 
 ## Current Rules
 
-- `git/tracked-env` (critical): finds Git-tracked `.env` files, including
-  variants such as `.env.production`, while excluding `.env.example`.
-- `docker/root-user` (high): checks `Dockerfile`, `Dockerfile.*`, and nested
-  variants for a non-root `USER` instruction.
-- `env/example-missing-variable` (medium): compares `process.env.NAME` and
-  `process.env["NAME"]` usage with all recognized `.env*.example`,
-  `.env*.sample`, and `.env*.template` files.
-- `runtime/node-version-mismatch` (high): compares Node versions in package,
-  local, Docker, and GitHub Actions configuration.
-- `runtime/package-manager-mismatch` (medium): catches dependency installs that
-  conflict with the repository lockfile.
-- `ci/tests-not-run` (high) and `ci/non-deterministic-install` (medium): check
-  GitHub Actions test coverage and npm lockfile usage.
+| Rule | Severity | What it catches |
+| --- | --- | --- |
+| `git/tracked-env` | Critical | Sensitive `.env` files tracked by Git; templates are excluded |
+| `docker/root-user` | High | Dockerfiles that do not select a non-root `USER` |
+| `env/example-missing-variable` | Medium | Variables missing from recognized env templates |
+| `runtime/node-version-mismatch` | High | Inconsistent Node versions across package, local, Docker, and CI configuration |
+| `runtime/package-manager-mismatch` | Medium | Docker or CI installs using a different manager than the lockfile |
+| `ci/tests-not-run` | High | Test scripts that GitHub Actions does not appear to run |
+| `ci/non-deterministic-install` | Medium | `npm install` in GitHub Actions when `package-lock.json` is present |
 
-Generated directories such as `node_modules`, `dist`, `build`, `coverage`,
-`.next`, and `.git` are never scanned. Blindspot's own fixtures and tests are
-also skipped during repository scans.
+## Local by Default
 
-## Development
+- Scanning happens locally.
+- Blindspot does not upload source code.
+- No AI model, API key, or account is required.
+- Blindspot does not modify the scanned repository.
+- No telemetry is currently collected.
 
-```bash
-npm install
-npm run dev
-npm run build
-npm test
-```
+## Supported Scope
 
-`npm run dev` performs one scan of the current directory.
+Blindspot currently works best with Node.js, JavaScript, and TypeScript
+repositories and their common surrounding tooling: Docker, GitHub Actions, npm,
+pnpm, yarn, and environment template files. It can detect Prisma, Next.js, and
+Express in repository metadata, but this release has no dedicated rules for
+those frameworks.
 
-## CI usage
-
-Run `npx blindspot-cli scan --json` in a CI step. Blindspot exits with `1`
-when it finds high or critical findings.
+## CI
 
 ```yaml
 - name: Run Blindspot
   run: npx blindspot-cli scan --severity high
 ```
 
+Blindspot exits with `1` when it finds a high or critical finding, `0` when a
+scan completes without either, and `2` when Blindspot itself fails.
+
 ## Configuration
 
-An optional root `blindspot.config.json` can disable individual rules:
+Use an optional root `blindspot.config.json` to suppress a rule that is not
+applicable to your repository:
 
 ```json
-{ "ignore": ["docker/root-user"] }
+{
+  "ignore": ["docker/root-user"]
+}
 ```
 
-## Roadmap
+## Limitations
 
-Future checks may cover CI configuration, dependency and repository hygiene,
-and infrastructure relationships. Blindspot intentionally does not include AI,
-cloud services, telemetry, dashboards, or automatic modifications in this MVP.
+Blindspot is early-stage. It favors a small number of high-confidence checks
+over broad coverage. Node version comparison is conservative, GitHub Actions
+parsing is lightweight rather than full YAML semantic analysis, and monorepos
+do not receive deep package-by-package analysis yet.
+
+## What Blindspot Is Not
+
+Blindspot is not an AI code reviewer, a replacement for ESLint, a complete
+security scanner, or a guarantee that a repository is secure or
+production-ready.
+
+## Contributing
+
+Blindspot prefers a few high-confidence findings over hundreds of noisy
+warnings. If it cannot determine something confidently, it should often stay
+quiet. Rule contributions should provide clear evidence, low false-positive
+rates, and repository-level value.
+
+Want to add a rule? See [CONTRIBUTING.md](CONTRIBUTING.md). For security issues
+in Blindspot itself, see [SECURITY.md](SECURITY.md).
+
+## Development
+
+```bash
+npm install
+npm run build
+npm test
+```
+
+MIT licensed. See [LICENSE](LICENSE).

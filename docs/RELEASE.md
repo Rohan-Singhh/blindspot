@@ -4,7 +4,7 @@
 - [ ] `npm run build`
 - [ ] `npm test`
 - [ ] `git diff --check`
-- [ ] `npm pack --dry-run --workspace @blindspot/cli`
+- [ ] `npm pack --dry-run --workspace blindspot-cli`
 - [ ] Install/test the packed CLI tarball
 - [ ] Verify `blindspot --help` and `blindspot --version`
 - [ ] Verify normal and JSON scans
