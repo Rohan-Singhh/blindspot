@@ -1,6 +1,6 @@
 # Blindspot rule catalog
 
-Blindspot 0.2.0 ships 24 deterministic repository-contract checks. Severities
+Blindspot 0.2.1 ships 24 deterministic repository-contract checks. Severities
 shown here are the defaults.
 
 ## Runtime
@@ -25,8 +25,6 @@ shown here are the defaults.
 | Rule | Severity | Detects | Evidence | Typical remediation |
 | --- | --- | --- | --- | --- |
 | `docker/root-user` | High | Dockerfiles without a clear non-root `USER` | Affected Dockerfiles | Select a non-root runtime user |
-| `docker/missing-node-env` | High | Dockerfiles without `ENV NODE_ENV=production` | Affected Dockerfiles | Set ENV NODE_ENV=production in your Dockerfile |
-| `docker/npm-start-entrypoint` | Medium | Dockerfiles using `npm start` as an entrypoint | Affected Dockerfiles | Invoke node directly using the exec form |
 | `docker/env-file-copied` | High | Root `COPY .` exposing local env files | Dockerfile, env files, `.dockerignore` gap | Ignore env files or copy explicit paths |
 | `docker/npm-install-with-lockfile` | Medium | `npm install` despite an npm lockfile | Docker command and lockfile | Use `npm ci` |
 
@@ -38,7 +36,6 @@ shown here are the defaults.
 | `ci/non-deterministic-install` | Medium | `npm install` in CI with `package-lock.json` | Workflow command and lockfile | Use `npm ci` |
 | `ci/script-command-missing` | High | CI invoking undefined root package scripts | Workflow command and scripts map | Define or correct the script |
 | `ci/cache-package-manager-mismatch` | Medium | setup-node cache disagreeing with the root lockfile | Cache value and lockfile manager | Align cache configuration |
-| `ci/missing-dependency-cache` | Medium | setup-node cache disabled in GitHub Actions | Missing cache option in setup-node | Add cache: 'npm' |
 
 ## Git
 

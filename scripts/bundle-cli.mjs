@@ -1,8 +1,9 @@
-import { cp, mkdir } from "node:fs/promises";
+import { cp, mkdir, rm } from "node:fs/promises";
 import path from "node:path";
 
 const root = process.cwd();
 const vendorRoot = path.join(root, "packages", "cli", "dist", "node_modules", "@blindspot");
+await rm(vendorRoot, { recursive: true, force: true });
 await mkdir(vendorRoot, { recursive: true });
 
 for (const packageName of ["core", "rules"]) {

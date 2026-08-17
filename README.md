@@ -12,7 +12,7 @@ npx blindspot-cli
 Local. Deterministic. No AI. No API key.
 
 ```text
-Blindspot v0.2.0
+Blindspot v0.2.1
 
 Detected:
 TypeScript · Docker · GitHub Actions
@@ -33,7 +33,7 @@ Files: backend/Dockerfile
 
 **Blindspot is a repository-contract scanner.** It finds when code, Git, Docker,
 CI, environment configuration, package tooling, and build/release configuration
-disagree. This release ships **27 repository-contract checks**.
+disagree. This release ships **24 repository-contract checks**.
 
 ## Why not ESLint?
 
@@ -86,8 +86,8 @@ npx blindspot-cli rules --category docker
 | --- | ---: | --- |
 | Runtime | 5 | Node, lockfile, and package-manager contracts |
 | Environment | 2 | Source usage and env-template consistency |
-| Docker | 5 | Runtime user, env build context, deterministic installs, entrypoints |
-| CI | 5 | Tests, scripts, caches, and deterministic installs |
+| Docker | 3 | Runtime user, env build context, and deterministic installs |
+| CI | 4 | Tests, scripts, caches, and deterministic installs |
 | Git | 4 | Tracked secrets, dependencies, env files, and ignored lockfiles |
 | Monorepo | 3 | Workspace package-manager, engine, and lockfile drift |
 | Release | 3 | npm runtime files, sensitive files, and publishability |
