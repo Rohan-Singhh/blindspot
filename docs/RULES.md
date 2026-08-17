@@ -1,6 +1,6 @@
 # Blindspot rule catalog
 
-Current source ships 30 deterministic repository-contract checks. Severities
+Current source ships 31 deterministic repository-contract checks. Severities
 shown here are the defaults.
 
 ## Runtime
@@ -59,6 +59,7 @@ shown here are the defaults.
 | `monorepo/package-manager-drift` | Medium | Conflicting explicit manager fields | Workspace manifests and managers | Align workspace manager contracts |
 | `monorepo/engine-drift` | Medium | Different explicit Node engine majors | Workspace manifests and ranges | Align runtime ranges or document the split |
 | `monorepo/multiple-lockfiles` | Medium | Root and workspace-local lockfiles | All affected lockfiles | Remove stale nested lockfiles or confirm intent |
+| `monorepo/duplicate-package-name` | High | A package name reused by declared workspaces | Duplicate name and manifests | Give every workspace a unique package name |
 
 ## Release
 

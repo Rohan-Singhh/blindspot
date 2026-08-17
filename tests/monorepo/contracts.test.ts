@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createRepositoryContext } from "@blindspot/core";
-import { monorepoEngineDriftRule, monorepoMultipleLockfilesRule, monorepoPackageManagerDriftRule } from "@blindspot/rules";
+import { duplicatePackageNameRule, monorepoEngineDriftRule, monorepoMultipleLockfilesRule, monorepoPackageManagerDriftRule } from "@blindspot/rules";
 import { createFixture } from "../helpers.js";
 
 const check = async (rule: typeof monorepoEngineDriftRule, files: Record<string, string>) => rule.check(await createRepositoryContext(await createFixture(files)));
@@ -13,4 +13,7 @@ describe("monorepo contract rules", () => {
   it("accepts aligned workspace Node engines", async () => expect(await check(monorepoEngineDriftRule, { "package.json": root(',"engines":{"node":">=22"}'), "packages/api/package.json": '{"engines":{"node":"^22"}}' })).toEqual([]));
   it("detects root and workspace-local lockfiles", async () => expect(await check(monorepoMultipleLockfilesRule, { "package.json": root(), "package-lock.json": "{}", "packages/api/package-lock.json": "{}" })).toHaveLength(1));
   it("accepts a root-managed monorepo lockfile", async () => expect(await check(monorepoMultipleLockfilesRule, { "package.json": root(), "package-lock.json": "{}", "packages/api/package.json": "{}" })).toEqual([]));
+  it("detects duplicate declared workspace package names", async () => expect(await check(duplicatePackageNameRule, { "package.json": root(), "packages/api/package.json": '{"name":"@app/service"}', "packages/web/package.json": '{"name":"@app/service"}' })).toHaveLength(1));
+  it("accepts unique workspace package names", async () => expect(await check(duplicatePackageNameRule, { "package.json": root(), "packages/api/package.json": '{"name":"@app/api"}', "packages/web/package.json": '{"name":"@app/web"}' })).toEqual([]));
+  it("ignores packages outside declared workspace patterns", async () => expect(await check(duplicatePackageNameRule, { "package.json": root(), "packages/api/package.json": '{"name":"@app/api"}', "examples/api/package.json": '{"name":"@app/api"}' })).toEqual([]));
 });
