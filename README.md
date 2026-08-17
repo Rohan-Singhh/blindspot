@@ -33,7 +33,7 @@ Files: backend/Dockerfile
 
 **Blindspot is a repository-contract scanner.** It finds when code, Git, Docker,
 CI, environment configuration, package tooling, and build/release configuration
-disagree. The current source ships **31 repository-contract checks**.
+disagree. The current source ships **32 repository-contract checks**.
 
 ## Why not ESLint?
 
@@ -89,7 +89,7 @@ npx blindspot-cli rules --category docker
 | Docker | 5 | Runtime user, build context, install order, and deterministic installs |
 | CI | 6 | Tests, scripts, paths, caches, and deterministic installs |
 | Git | 4 | Tracked secrets, dependencies, env files, and ignored lockfiles |
-| Monorepo | 4 | Workspace identity, package-manager, engine, and lockfile drift |
+| Monorepo | 5 | Workspace identity, scripts, package-manager, engine, and lockfile drift |
 | Release | 3 | npm runtime files, sensitive files, and publishability |
 
 See the complete [rule catalog](docs/RULES.md) for evidence and remediation.

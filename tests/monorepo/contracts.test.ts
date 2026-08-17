@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createRepositoryContext } from "@blindspot/core";
-import { duplicatePackageNameRule, monorepoEngineDriftRule, monorepoMultipleLockfilesRule, monorepoPackageManagerDriftRule } from "@blindspot/rules";
+import { duplicatePackageNameRule, monorepoEngineDriftRule, monorepoMultipleLockfilesRule, monorepoPackageManagerDriftRule, workspaceScriptMissingRule } from "@blindspot/rules";
 import { createFixture } from "../helpers.js";
 
 const check = async (rule: typeof monorepoEngineDriftRule, files: Record<string, string>) => rule.check(await createRepositoryContext(await createFixture(files)));
@@ -16,4 +16,7 @@ describe("monorepo contract rules", () => {
   it("detects duplicate declared workspace package names", async () => expect(await check(duplicatePackageNameRule, { "package.json": root(), "packages/api/package.json": '{"name":"@app/service"}', "packages/web/package.json": '{"name":"@app/service"}' })).toHaveLength(1));
   it("accepts unique workspace package names", async () => expect(await check(duplicatePackageNameRule, { "package.json": root(), "packages/api/package.json": '{"name":"@app/api"}', "packages/web/package.json": '{"name":"@app/web"}' })).toEqual([]));
   it("ignores packages outside declared workspace patterns", async () => expect(await check(duplicatePackageNameRule, { "package.json": root(), "packages/api/package.json": '{"name":"@app/api"}', "examples/api/package.json": '{"name":"@app/api"}' })).toEqual([]));
+  it("detects a workspace missing a recursively required script", async () => expect(await check(workspaceScriptMissingRule, { "package.json": root(',"scripts":{"build":"npm run build --workspaces"}'), "packages/api/package.json": '{"scripts":{"build":"tsc"}}', "packages/web/package.json": "{}" })).toHaveLength(1));
+  it("accepts recursive scripts defined by every workspace", async () => expect(await check(workspaceScriptMissingRule, { "package.json": root(',"scripts":{"test":"pnpm -r run test"}'), "packages/api/package.json": '{"scripts":{"test":"vitest"}}', "packages/web/package.json": '{"scripts":{"test":"vitest"}}' })).toEqual([]));
+  it("accepts intentionally optional recursive scripts", async () => expect(await check(workspaceScriptMissingRule, { "package.json": root(',"scripts":{"lint":"npm run lint --workspaces --if-present"}'), "packages/api/package.json": "{}" })).toEqual([]));
 });
