@@ -1,6 +1,6 @@
 # Blindspot rule catalog
 
-Current source ships 26 deterministic repository-contract checks. Severities
+Current source ships 27 deterministic repository-contract checks. Severities
 shown here are the defaults.
 
 ## Runtime
@@ -29,6 +29,7 @@ shown here are the defaults.
 | `docker/env-file-copied` | High | Root `COPY .` exposing local env files | Dockerfile, env files, `.dockerignore` gap | Ignore env files or copy explicit paths |
 | `docker/npm-install-with-lockfile` | Medium | `npm install` despite an npm lockfile | Docker command and lockfile | Use `npm ci` |
 | `docker/lockfile-not-copied` | High | `npm ci` before the lockfile is available in a build stage | Docker instruction order and npm lockfile | Copy the lockfile before installing |
+| `docker/package-manifest-not-copied` | High | Dependency install before package.json is available in a build stage | Docker instruction order and package.json | Copy the manifest before installing |
 
 ## CI
 
