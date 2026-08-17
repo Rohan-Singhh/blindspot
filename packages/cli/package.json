@@ -1,9 +1,15 @@
 {
   "name": "@blindspot/cli",
   "version": "0.1.0",
+  "description": "Find the problems your linters don't.",
+  "license": "MIT",
+  "keywords": ["cli", "repository", "lint", "security", "devtools"],
+  "engines": { "node": ">=20" },
   "type": "module",
   "main": "./dist/index.js",
   "bin": { "blindspot": "./dist/index.js" },
+  "files": ["dist/**/*.js", "dist/**/package.json", "README.md", "LICENSE"],
+  "bundleDependencies": ["@blindspot/core", "@blindspot/rules"],
   "dependencies": {
     "@blindspot/core": "file:../core",
     "@blindspot/rules": "file:../rules",

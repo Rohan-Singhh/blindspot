@@ -7,7 +7,7 @@ file-focused linters commonly miss. ESLint primarily analyzes source-code rules.
 Blindspot is designed for repository-wide checks involving Git, environment
 configuration, infrastructure, CI, and relationships between files.
 
-## Installation
+## Quick Start
 
 Requires Node.js 20 or later.
 
@@ -34,6 +34,9 @@ blindspot scan --json
 `--json` writes only machine-readable findings to standard output. Exit code `1`
 means at least one high or critical finding was found; `2` means Blindspot failed.
 
+Filter enabled rules with `--severity high` (critical and high findings) or
+`--category docker`. JSON includes both the detected repository stack and findings.
+
 Example:
 
 ```text
@@ -54,7 +57,14 @@ docker/root-user
 Docker container appears to run as root.
 ```
 
-## Current rules
+## Why Blindspot?
+
+ESLint understands source-code rules. Blindspot looks across repository
+configuration, infrastructure, CI, Git, and environment setup to find problems
+that exist between files. It is early-stage and intentionally runs entirely
+locally and read-only.
+
+## Current Rules
 
 - `git/tracked-env` (critical): finds Git-tracked `.env` files, including
   variants such as `.env.production`, while excluding `.env.example`.
@@ -62,6 +72,12 @@ Docker container appears to run as root.
   variants for a non-root `USER` instruction.
 - `env/example-missing-variable` (medium): compares `process.env.NAME` and
   `process.env["NAME"]` usage with `.env.example`.
+- `runtime/node-version-mismatch` (high): compares Node versions in package,
+  local, Docker, and GitHub Actions configuration.
+- `runtime/package-manager-mismatch` (medium): catches dependency installs that
+  conflict with the repository lockfile.
+- `ci/tests-not-run` (high) and `ci/non-deterministic-install` (medium): check
+  GitHub Actions test coverage and npm lockfile usage.
 
 Generated directories such as `node_modules`, `dist`, `build`, `coverage`,
 `.next`, and `.git` are never scanned. Blindspot's own fixtures and tests are
@@ -77,6 +93,24 @@ npm test
 ```
 
 `npm run dev` performs one scan of the current directory.
+
+## CI usage
+
+Run `npx @blindspot/cli scan --json` in a CI step. Blindspot exits with `1`
+when it finds high or critical findings.
+
+```yaml
+- name: Run Blindspot
+  run: npx @blindspot/cli scan --severity high
+```
+
+## Configuration
+
+An optional root `blindspot.config.json` can disable individual rules:
+
+```json
+{ "ignore": ["docker/root-user"] }
+```
 
 ## Roadmap
 

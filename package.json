@@ -6,9 +6,9 @@
   "type": "module",
   "workspaces": ["packages/*"],
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && node scripts/bundle-cli.mjs",
     "dev": "npm run build --silent && node packages/cli/dist/index.js",
-    "test": "vitest run",
+    "test": "npm run build --silent && vitest run",
     "test:watch": "vitest"
   },
   "engines": { "node": ">=20" },

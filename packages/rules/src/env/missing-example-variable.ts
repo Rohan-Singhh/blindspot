@@ -21,13 +21,16 @@ function documentedVariables(example: string): Set<string> {
 
 export const missingExampleVariableRule: Rule = {
   id: "env/example-missing-variable",
-  severity: "medium",
+  title: "Missing environment example variable",
+  category: "env",
+  defaultSeverity: "medium",
   description: "Detects environment variables absent from .env.example.",
   async check(context): Promise<Finding[]> {
     const sourceFiles = context.files.filter((file) => SOURCE_FILE.test(file));
     const used = new Set<string>();
     for (const file of sourceFiles) {
-      const source = await readFile(path.join(context.rootDir, file), "utf8");
+      let source: string;
+      try { source = await readFile(path.join(context.rootDir, file), "utf8"); } catch { continue; }
       variablesInSource(source).forEach((variable) => used.add(variable));
     }
     if (used.size === 0) return [];
@@ -40,7 +43,9 @@ export const missingExampleVariableRule: Rule = {
         recommendation: "Create .env.example and document the environment variables required by the application.",
       }];
     }
-    const documented = documentedVariables(await readFile(path.join(context.rootDir, exampleFile), "utf8"));
+    let contents: string;
+    try { contents = await readFile(path.join(context.rootDir, exampleFile), "utf8"); } catch { return []; }
+    const documented = documentedVariables(contents);
     return usedVariables.filter((variable) => !documented.has(variable)).map((variable) => ({
       ruleId: "env/example-missing-variable", severity: "medium",
       message: `${variable} is used by the application but is not documented in .env.example.`,

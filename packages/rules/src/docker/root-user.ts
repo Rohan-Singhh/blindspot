@@ -10,13 +10,16 @@ const isNonRootUser = (value: string): boolean => {
 
 export const rootUserRule: Rule = {
   id: "docker/root-user",
-  severity: "high",
+  title: "Container runs as root",
+  category: "docker",
+  defaultSeverity: "high",
   description: "Detects Dockerfiles that do not select a non-root user.",
   async check(context): Promise<Finding[]> {
     const dockerfiles = context.files.filter(isDockerfile);
     const unsafeFiles: string[] = [];
     for (const file of dockerfiles) {
-      const contents = await readFile(path.join(context.rootDir, file), "utf8");
+      let contents: string;
+      try { contents = await readFile(path.join(context.rootDir, file), "utf8"); } catch { continue; }
       const hasNonRootUser = contents.split(/\r?\n/).some((line) => {
         const withoutComment = line.replace(/\s+#.*$/, "");
         const match = /^\s*USER\s+(.+)$/i.exec(withoutComment);

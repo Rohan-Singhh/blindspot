@@ -1,0 +1,6 @@
+{
+  "name": "realistic-broken-node",
+  "engines": { "node": ">=22" },
+  "scripts": { "test": "vitest run" },
+  "dependencies": { "express": "^5.0.0" }
+}

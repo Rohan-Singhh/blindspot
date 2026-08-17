@@ -1,8 +1,8 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
-import { createRepositoryContext } from "@blindspot/core";
-import { missingExampleVariableRule, rootUserRule, trackedEnvRule } from "@blindspot/rules";
+import { createRepositoryContext, runRules } from "@blindspot/core";
+import { builtInRules, missingExampleVariableRule, rootUserRule, trackedEnvRule } from "@blindspot/rules";
 import { copyFixture, fixturePath } from "./helpers.js";
 
 const execFileAsync = promisify(execFile);
@@ -56,5 +56,16 @@ describe("env/example-missing-variable", () => {
     const findings = await missingExampleVariableRule.check(await createRepositoryContext(root));
     expect(findings).toHaveLength(1);
     expect(findings[0].message).toContain("Detected variables: DATABASE_URL, JWT_SECRET, REDIS_URL");
+  });
+});
+
+describe("repository-level rules", () => {
+  it("detects stack information and issues in a realistic broken Node backend", async () => {
+    const context = await contextFor("realistic-broken-node");
+    expect(context.stack).toMatchObject({ node: true, javascript: true, docker: true, githubActions: true, express: true, packageManager: "pnpm" });
+    const findings = await runRules(context, builtInRules);
+    expect(findings.map((finding) => finding.ruleId)).toEqual(expect.arrayContaining([
+      "runtime/node-version-mismatch", "runtime/package-manager-mismatch", "ci/tests-not-run", "env/example-missing-variable", "docker/root-user",
+    ]));
   });
 });

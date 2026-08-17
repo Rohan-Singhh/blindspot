@@ -11,7 +11,9 @@ function isSensitiveEnvFile(file: string): boolean {
 
 export const trackedEnvRule: Rule = {
   id: "git/tracked-env",
-  severity: "critical",
+  title: "Tracked environment file",
+  category: "git",
+  defaultSeverity: "critical",
   description: "Detects sensitive environment files tracked by Git.",
   async check(context): Promise<Finding[]> {
     try {

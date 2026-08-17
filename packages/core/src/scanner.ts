@@ -1,9 +1,9 @@
-import { readdir } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import type { Finding, RepositoryContext, Rule } from "./types.js";
 
 export const DEFAULT_IGNORED_DIRECTORIES = new Set([
-  ".git", "node_modules", "dist", "build", "coverage", ".next", "fixtures", "tests",
+  ".git", "node_modules", "dist", "build", "coverage", ".next", "out", "vendor", "fixtures", "tests",
 ]);
 
 export interface ScanOptions { ignoredDirectories?: ReadonlySet<string>; }
@@ -13,7 +13,8 @@ export async function createRepositoryContext(rootDir: string, options: ScanOpti
   const ignored = options.ignoredDirectories ?? DEFAULT_IGNORED_DIRECTORIES;
   const files: string[] = [];
   async function visit(directory: string): Promise<void> {
-    const entries = await readdir(directory, { withFileTypes: true });
+    let entries;
+    try { entries = await readdir(directory, { withFileTypes: true }); } catch { return; }
     await Promise.all(entries.map(async (entry) => {
       const absolutePath = path.join(directory, entry.name);
       if (entry.isDirectory()) {
@@ -24,7 +25,25 @@ export async function createRepositoryContext(rootDir: string, options: ScanOpti
     }));
   }
   await visit(resolvedRoot);
-  return { rootDir: resolvedRoot, files: files.sort() };
+  const sortedFiles = files.sort();
+  const packageFile = sortedFiles.find((file) => file === "package.json");
+  let packageData: { dependencies?: Record<string, string>; devDependencies?: Record<string, string> } = {};
+  if (packageFile) {
+    try { packageData = JSON.parse(await readFile(path.join(resolvedRoot, packageFile), "utf8")) as typeof packageData; } catch { /* rules handle malformed package data where relevant */ }
+  }
+  const dependencies = { ...packageData.dependencies, ...packageData.devDependencies };
+  const has = (name: string) => Object.hasOwn(dependencies, name);
+  const stack = {
+    node: Boolean(packageFile || sortedFiles.some((file) => /^(\.nvmrc|\.node-version)$/.test(file))),
+    typescript: sortedFiles.some((file) => file.endsWith(".ts") || file.endsWith(".tsx") || file === "tsconfig.json"),
+    javascript: sortedFiles.some((file) => /\.[cm]?jsx?$/.test(file)),
+    docker: sortedFiles.some((file) => /(^|\/)Dockerfile(?:\..+)?$/.test(file)),
+    githubActions: sortedFiles.some((file) => /^\.github\/workflows\/.*\.ya?ml$/.test(file)),
+    prisma: sortedFiles.some((file) => /(^|\/)schema\.prisma$/.test(file)) || has("prisma") || has("@prisma/client"),
+    nextjs: has("next"), express: has("express"),
+    packageManager: sortedFiles.includes("pnpm-lock.yaml") ? "pnpm" as const : sortedFiles.includes("yarn.lock") ? "yarn" as const : sortedFiles.includes("package-lock.json") ? "npm" as const : undefined,
+  };
+  return { rootDir: resolvedRoot, files: sortedFiles, stack };
 }
 
 export async function runRules(context: RepositoryContext, rules: readonly Rule[]): Promise<Finding[]> {
