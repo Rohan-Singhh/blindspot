@@ -1,6 +1,6 @@
 # Blindspot rule catalog
 
-Current source ships 29 deterministic repository-contract checks. Severities
+Current source ships 30 deterministic repository-contract checks. Severities
 shown here are the defaults.
 
 ## Runtime
@@ -20,6 +20,7 @@ shown here are the defaults.
 | --- | --- | --- | --- | --- |
 | `env/example-missing-variable` | Medium | Source env usage absent from recognized templates | Missing variable names and templates | Document missing variables |
 | `env/duplicate-template-variable` | Medium | Duplicate declarations inside one env template | Template and duplicate names | Keep one declaration per variable |
+| `env/template-workspace-drift` | Medium | Workspace variables documented only by another workspace | Source files and env templates | Document variables in the owning workspace |
 
 ## Docker
 
