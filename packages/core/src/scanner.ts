@@ -39,9 +39,16 @@ export async function createRepositoryContext(rootDir: string, options: ScanOpti
 
   // ── New ecosystem detection ───────────────────────────────────────────────
   const hasTfFiles = sortedFiles.some((f) => f.endsWith(".tf"));
-  // Kubernetes: any YAML file that is likely a manifest (contains kind: + apiVersion:) OR a conventional k8s dir
+  // Kubernetes: a conventional directory or a YAML document with both required manifest markers.
   const hasK8sDir = sortedFiles.some((f) => /^(k8s|kubernetes|manifests|deploy|helm)\//i.test(f));
-  const hasK8sYaml = sortedFiles.some((f) => /\.(yaml|yml)$/.test(f) && !/^\.github\//.test(f) && !f.includes("azure-pipeline") && !f.includes(".circleci") && !f.includes("gitlab-ci"));
+  const yamlCandidates = sortedFiles.filter((f) => /\.(yaml|yml)$/.test(f) && !/^\.github\//.test(f) && !f.includes("azure-pipeline") && !f.includes(".circleci") && !f.includes("gitlab-ci"));
+  let hasK8sYaml = false;
+  for (const file of yamlCandidates) {
+    try {
+      const source = await readFile(path.join(resolvedRoot, file), "utf8");
+      if (/^\s*apiVersion\s*:/m.test(source) && /^\s*kind\s*:/m.test(source)) { hasK8sYaml = true; break; }
+    } catch { /* Unreadable YAML does not identify the stack. */ }
+  }
 
   const stack = {
     // Node / JS
