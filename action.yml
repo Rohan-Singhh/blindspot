@@ -1,0 +1,82 @@
+name: 'Blindspot'
+description: 'Find repository-contract mismatches across Node, Docker, CI, Kubernetes, Terraform, Python, Go, Java, and Rust.'
+author: 'Rohan-Singhh'
+
+branding:
+  icon: 'search'
+  color: 'red'
+
+inputs:
+  path:
+    description: 'Path to the repository to scan. Defaults to the current workspace.'
+    required: false
+    default: '.'
+  severity:
+    description: 'Minimum severity to report: critical, high, medium, or low. Exits with code 1 if any high/critical findings are found.'
+    required: false
+    default: 'high'
+  category:
+    description: 'Only run rules in this category (e.g. docker, kubernetes, terraform, ci, git, runtime, python, go, java, rust, security).'
+    required: false
+    default: ''
+  sarif-output:
+    description: 'Path to write a SARIF 2.1.0 file for GitHub Code Scanning integration. Leave empty to skip SARIF output.'
+    required: false
+    default: 'blindspot.sarif'
+  upload-sarif:
+    description: 'Upload the SARIF file to GitHub Code Scanning (requires github/codeql-action). Set to false to skip upload.'
+    required: false
+    default: 'true'
+
+outputs:
+  findings-count:
+    description: 'Total number of active findings.'
+    value: ${{ steps.scan.outputs.findings-count }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Run Blindspot scan
+      id: scan
+      shell: bash
+      run: |
+        npm ci --prefix "$GITHUB_ACTION_PATH" --ignore-scripts
+        npm run build --prefix "$GITHUB_ACTION_PATH" --silent
+
+        BLINDSPOT="node $GITHUB_ACTION_PATH/packages/cli/dist/index.js"
+
+        SCAN_ARGS="${{ inputs.path }}"
+
+        if [ -n "${{ inputs.severity }}" ]; then
+          SCAN_ARGS="$SCAN_ARGS --severity ${{ inputs.severity }}"
+        fi
+
+        if [ -n "${{ inputs.category }}" ]; then
+          SCAN_ARGS="$SCAN_ARGS --category ${{ inputs.category }}"
+        fi
+
+        if [ -n "${{ inputs.sarif-output }}" ]; then
+          SCAN_ARGS="$SCAN_ARGS --sarif ${{ inputs.sarif-output }}"
+        fi
+
+        # Run scan; capture exit code separately so SARIF is always written
+        $BLINDSPOT scan $SCAN_ARGS --quiet || EXIT_CODE=$?
+
+        # Count findings via JSON output (quiet json scan, ignore exit code)
+        COUNT=$($BLINDSPOT scan ${{ inputs.path }} --json --quiet 2>/dev/null | node -e "const d=require('fs').readFileSync('/dev/stdin','utf8'); try { console.log(JSON.parse(d).findings.length); } catch { console.log(0); }" || echo 0)
+        echo "findings-count=$COUNT" >> "$GITHUB_OUTPUT"
+
+        exit ${EXIT_CODE:-0}
+
+    - name: Upload SARIF to GitHub Code Scanning
+      if: ${{ inputs.upload-sarif == 'true' && inputs.sarif-output != '' }}
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ inputs.sarif-output }}
+        category: blindspot
+      continue-on-error: true
