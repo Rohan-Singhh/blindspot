@@ -10,9 +10,27 @@ export interface Finding {
 }
 
 export interface RepositoryStack {
-  node?: boolean; typescript?: boolean; javascript?: boolean; docker?: boolean;
-  githubActions?: boolean; prisma?: boolean; nextjs?: boolean; express?: boolean;
+  // Node / JS ecosystem
+  node?: boolean;
+  typescript?: boolean;
+  javascript?: boolean;
+  docker?: boolean;
+  githubActions?: boolean;
+  prisma?: boolean;
+  nextjs?: boolean;
+  express?: boolean;
   packageManager?: "npm" | "pnpm" | "yarn";
+  // New ecosystems
+  kubernetes?: boolean;
+  terraform?: boolean;
+  python?: boolean;
+  golang?: boolean;
+  java?: boolean;
+  rust?: boolean;
+  // New CI platforms
+  gitlabCi?: boolean;
+  azurePipelines?: boolean;
+  circleCi?: boolean;
 }
 
 export interface RepositoryContext {
