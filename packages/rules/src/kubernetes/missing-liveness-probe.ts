@@ -22,11 +22,11 @@ export const missingLivenessProbeRule: Rule = {
         const kindMatch = /^\s*kind\s*:\s*(\w+)/m.exec(doc);
         if (!kindMatch || !WORKLOAD_KINDS.has(kindMatch[1])) continue;
 
-        const containersSectionMatch = /\bcontainers\s*:\s*\n([\s\S]*?)(?=\n\s{0,4}\w|\n---|\s*$)/m.exec(doc);
+        const containersSectionMatch = /\bcontainers\s*:\s*\n([\s\S]*?)(?=\n[ \t]{0,4}\w|\n---|$(?![\s\S]))/m.exec(doc);
         if (!containersSectionMatch) continue;
 
         const section = containersSectionMatch[1];
-        const entries = section.split(/(?=\n\s+-\s+(?:name|image)\s*:)/);
+        const entries = section.split(/(?=\n[ \t]+-\s+(?:name|image)\s*:)/);
         let missingProbe = false;
         for (const entry of entries) {
           if (!entry.trim()) continue;

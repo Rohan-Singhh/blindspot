@@ -14,12 +14,12 @@ function containersWithoutLimits(content: string): boolean {
 
   // Find containers: sections — if any container block lacks a limits: sub-section we flag it
   // Strategy: split on "- name:" inside a containers: block and look for limits:
-  const containersSectionMatch = /\bcontainers\s*:\s*\n([\s\S]*?)(?=\n\s{0,4}\w|\n---|\s*$)/m.exec(content);
+  const containersSectionMatch = /\bcontainers\s*:\s*\n([\s\S]*?)(?=\n[ \t]{0,4}\w|\n---|$(?![\s\S]))/m.exec(content);
   if (!containersSectionMatch) return false;
   const section = containersSectionMatch[1];
 
   // Split on container entries
-  const entries = section.split(/(?=\n\s+-\s+(?:name|image)\s*:)/);
+  const entries = section.split(/(?=\n[ \t]+-\s+(?:name|image)\s*:)/);
   for (const entry of entries) {
     if (!entry.trim()) continue;
     if (!/\blimits\s*:/m.test(entry)) return true; // found a container without limits

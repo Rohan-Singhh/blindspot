@@ -131,10 +131,19 @@ export const gitlabCacheKeyMissingRule: Rule = {
       const content = await readRepositoryFile(context, file);
       if (!content) continue;
 
-      // Split on job blocks and check each for cache without key
-      const cacheBlocks = [...content.matchAll(/^(\s*)cache\s*:\s*\n((?:\1\s+[^\n]+\n?)*)/gm)];
-      for (const block of cacheBlocks) {
-        if (!/\bkey\s*:/.test(block[2])) {
+      const lines = content.split(/\r?\n/);
+      for (let index = 0; index < lines.length; index += 1) {
+        const cache = /^(\s*)cache\s*:\s*$/.exec(lines[index]);
+        if (!cache) continue;
+        const indent = cache[1].length;
+        let hasKey = false;
+        for (let next = index + 1; next < lines.length; next += 1) {
+          if (lines[next].trim() === "") continue;
+          const nextIndent = /^\s*/.exec(lines[next])?.[0].length ?? 0;
+          if (nextIndent <= indent) break;
+          if (/^\s*key\s*:/.test(lines[next])) { hasKey = true; break; }
+        }
+        if (!hasKey) {
           findings.push({
             ruleId: "ci/gitlab-cache-key-missing",
             severity: "medium",
