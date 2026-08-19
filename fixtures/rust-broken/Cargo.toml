@@ -1,0 +1,11 @@
+[package]
+name = "my-service"
+version = "0.1.0"
+
+[[bin]]
+name = "my-service"
+path = "src/main.rs"
+
+[dependencies]
+tokio = { version = "1.35", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }

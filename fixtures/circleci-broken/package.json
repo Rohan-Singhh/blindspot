@@ -1,0 +1,12 @@
+{
+  "name": "circleci-broken",
+  "version": "1.0.0",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "jest",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}

@@ -1,0 +1,19 @@
+version: 2.1
+
+jobs:
+  build:
+    docker:
+      - image: node:18
+    steps:
+      - checkout
+      - run:
+          name: Install
+          command: npm install
+      - run:
+          name: Build
+          command: npm run build
+
+workflows:
+  build-workflow:
+    jobs:
+      - build
